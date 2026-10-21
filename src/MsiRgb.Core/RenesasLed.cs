@@ -2,7 +2,7 @@ using System;
 using System.Runtime.Versioning;
 using System.Threading;
 
-namespace FanControl.MsiRgb;
+namespace MsiRgb;
 
 /// <summary>
 /// MSI motherboard RGB MCU (Renesas, MSI "chipset" 0x26 / Renesas6) on the chipset SMBus.
@@ -75,12 +75,14 @@ internal sealed class RenesasLed : IDisposable
         Repeat(RegBrightness, BrightnessMax);
     }
 
-    public void SetColor(ZoneMask zones, Rgb c)
+    /// <param name="fast">Animation frames: single latch write instead of MSI's 3x30 ms (≈10x faster).</param>
+    public void SetColor(ZoneMask zones, Rgb c, bool fast = false)
     {
         WriteMask(zones);
         Write(RegRed, c.R);
         Write(RegGreen, c.G);
-        Repeat(RegBlue, c.B);
+        if (fast) Write(RegBlue, c.B);
+        else Repeat(RegBlue, c.B);
     }
 
     private void WriteMask(ZoneMask z)

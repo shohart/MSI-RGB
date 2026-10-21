@@ -7,7 +7,7 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <Version>0.1.0</Version>
     <Product>FanControl MSI RGB</Product>
-    <Description>FanControl plugin: drive MSI Renesas-MCU motherboard RGB from temperature curves.</Description>
+    <Description>Optional FanControl bridge for the MSI RGB tray app (forwards a curve's %, no hardware access).</Description>
     <!-- Folder holding FanControl.Plugins.dll (FanControl install dir, or ../../lib for CI) -->
     <FanControlDir Condition="'$(FanControlDir)' == ''">$(MSBuildThisFileDirectory)..\..\lib</FanControlDir>
   </PropertyGroup>
@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\SmbusI801.bin" LogicalName="SmbusI801.bin" />
+    <Compile Include="..\MsiRgb.Core\LinkFile.cs" Link="Core\LinkFile.cs" />
   </ItemGroup>
 
   <ItemGroup>

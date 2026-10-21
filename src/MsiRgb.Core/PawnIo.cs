@@ -6,7 +6,7 @@ using System.Runtime.Versioning;
 using System.Threading;
 using Microsoft.Win32;
 
-namespace FanControl.MsiRgb;
+namespace MsiRgb;
 
 /// <summary>
 /// Minimal PawnIO client for the signed SmbusI801 module (Intel i801 SMBus host).

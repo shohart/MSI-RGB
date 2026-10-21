@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace FanControl.MsiRgb;
+namespace MsiRgb;
 
 internal readonly record struct Rgb(byte R, byte G, byte B)
 {
@@ -32,6 +32,35 @@ internal readonly record struct Rgb(byte R, byte G, byte B)
     }
 
     public override string ToString() => $"#{R:X2}{G:X2}{B:X2}";
+
+    public static Rgb Lerp(Rgb a, Rgb b, float t)
+    {
+        t = Math.Clamp(t, 0f, 1f);
+        return new Rgb(L(a.R, b.R, t), L(a.G, b.G, t), L(a.B, b.B, t));
+    }
+
+    /// <summary>Software brightness: the MCU's own brightness register has no visible effect.</summary>
+    public Rgb Scale(float k)
+    {
+        k = Math.Clamp(k, 0f, 1f);
+        return new Rgb((byte)Math.Round(R * k), (byte)Math.Round(G * k), (byte)Math.Round(B * k));
+    }
+
+    /// <summary>h in degrees, s and v 0..1.</summary>
+    public static Rgb FromHsv(float h, float s, float v)
+    {
+        h = ((h % 360f) + 360f) % 360f;
+        float c = v * s, x = c * (1 - Math.Abs(h / 60f % 2 - 1)), m = v - c;
+        (float r, float g, float b) = (int)(h / 60f) switch
+        {
+            0 => (c, x, 0f), 1 => (x, c, 0f), 2 => (0f, c, x),
+            3 => (0f, x, c), 4 => (x, 0f, c), _ => (c, 0f, x),
+        };
+        return new Rgb(B8(r + m), B8(g + m), B8(b + m));
+    }
+
+    private static byte L(byte a, byte b, float t) => (byte)Math.Round(a + (b - a) * t);
+    private static byte B8(float f) => (byte)Math.Round(Math.Clamp(f, 0f, 1f) * 255f);
 }
 
 /// <summary>Zone bitmask registers 0x80..0x83 of the MSI Renesas MCU.</summary>
@@ -73,11 +102,9 @@ internal sealed class Gradient
             {
                 var (x0, c0) = _stops[i - 1];
                 float t = x1 > x0 ? (percent - x0) / (x1 - x0) : 1f;
-                return new Rgb(Lerp(c0.R, c1.R, t), Lerp(c0.G, c1.G, t), Lerp(c0.B, c1.B, t));
+                return Rgb.Lerp(c0, c1, t);
             }
         }
         return _stops[^1].Color;
     }
-
-    private static byte Lerp(byte a, byte b, float t) => (byte)Math.Round(a + (b - a) * t);
 }

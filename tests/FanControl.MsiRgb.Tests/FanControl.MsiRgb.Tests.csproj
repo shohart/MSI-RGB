@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
@@ -10,9 +10,10 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\FanControl.MsiRgb\FanControl.MsiRgb.csproj" />
-    <Reference Include="FanControl.Plugins">
-      <HintPath>..\..\lib\FanControl.Plugins.dll</HintPath>
-    </Reference>
+    <!-- pure logic only: hardware/UI code is Windows-only -->
+    <Compile Include="..\..\src\MsiRgb.Core\Model.cs" Link="Linked\Model.cs" />
+    <Compile Include="..\..\src\MsiRgb.Core\LinkFile.cs" Link="Linked\LinkFile.cs" />
+    <Compile Include="..\..\src\MsiRgb.App\AppSettings.cs" Link="Linked\AppSettings.cs" />
+    <Compile Include="..\..\src\MsiRgb.App\ColorEngine.cs" Link="Linked\ColorEngine.cs" />
   </ItemGroup>
 </Project>

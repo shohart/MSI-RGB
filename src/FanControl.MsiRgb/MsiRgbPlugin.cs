@@ -1,117 +1,71 @@
 using System;
-using System.Runtime.Versioning;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using FanControl.Plugins;
+using LinkFile = global::MsiRgb.LinkFile;
 
 namespace FanControl.MsiRgb;
 
 /// <summary>
-/// Exposes MSI motherboard RGB as FanControl "controls": assign any curve (graph, mix, linear...)
-/// to it and the percentage becomes a colour.
+/// Optional bridge for the MSI RGB tray app: exposes a FanControl control whose curve
+/// output (0..100 %) is forwarded to the app through a small file. It never touches hardware.
 /// </summary>
-[SupportedOSPlatform("windows")]
 public sealed class MsiRgbPlugin : IPlugin2
 {
     private readonly IPluginLogger? _logger;
-    private RenesasLed? _led;
-    private RgbWorker? _worker;
-    private List<Channel> _channels = new();
+    private LinkControl? _control;
 
     public MsiRgbPlugin() { }
     public MsiRgbPlugin(IPluginLogger logger) => _logger = logger;
 
     public string Name => "MSI RGB";
 
-    private void Log(string msg)
-    {
-        try { _logger?.Log("[MSI RGB] " + msg); } catch { }
-    }
-
-    public void Initialize()
-    {
-        Close(); // FanControl may re-initialize plugins without closing them first
-        try
-        {
-            var dir = Path.GetDirectoryName(typeof(MsiRgbPlugin).Assembly.Location) ?? ".";
-            var cfgPath = Path.Combine(dir, "FanControl.MsiRgb.json");
-            var cfg = PluginConfig.LoadOrCreate(cfgPath);
-            _channels = cfg.Channels.Select(c => new Channel(c)).ToList();
-
-            _led = RenesasLed.Open(Log);
-            _worker = new RgbWorker(_led, _channels, TimeSpan.FromSeconds(cfg.ReassertSeconds), Log);
-            _worker.Start();
-            _worker.Poke();
-            Log($"ready, {_channels.Count} channel(s), config {cfgPath}");
-        }
-        catch (Exception e)
-        {
-            Log("disabled: " + e.Message);
-            Close();
-        }
-    }
+    public void Initialize() => _control ??= new LinkControl(LinkFile.DefaultPath, m => { try { _logger?.Log("[MSI RGB] " + m); } catch { } });
 
     public void Load(IPluginSensorsContainer container)
     {
-        if (_worker == null) return;
-        foreach (var ch in _channels)
-        {
-            if (ch.Gradient != null)
-            {
-                container.ControlSensors.Add(new RgbControl($"MsiRgb/{ch.Config.Id}", ch.Config.DisplayName,
-                    v => { ch.SetGradient(v); _worker.Poke(); }));
-            }
-            else
-            {
-                string[] names = { "Red", "Green", "Blue" };
-                for (int i = 0; i < 3; i++)
-                {
-                    int idx = i;
-                    container.ControlSensors.Add(new RgbControl($"MsiRgb/{ch.Config.Id}/{names[i].ToLowerInvariant()}",
-                        $"{ch.Config.Name} {names[i]}", v => { ch.SetComponent(idx, v); _worker.Poke(); }));
-                }
-            }
-        }
+        if (_control != null) container.ControlSensors.Add(_control);
     }
 
     public void Update() { }
-
-    public void Close()
-    {
-        try { _worker?.Dispose(); } catch { }
-        try { _led?.Dispose(); } catch { }
-        _worker = null;
-        _led = null;
-    }
+    public void Close() { }
 }
 
-internal sealed class RgbControl : IPluginControlSensor
+internal sealed class LinkControl : IPluginControlSensor
 {
-    private readonly Action<float?> _apply;
+    private readonly string _path;
+    private readonly Action<string> _log;
+    private float? _written;
+    private DateTime _writtenAt;
 
-    public RgbControl(string id, string name, Action<float?> apply)
+    public LinkControl(string path, Action<string> log)
     {
-        Id = id;
-        Name = name;
-        _apply = apply;
+        _path = path;
+        _log = log;
     }
 
-    public string Id { get; }
-    public string Name { get; }
+    public string Id => "MsiRgb/link";
+    public string Name => "MSI RGB (цвет из приложения)";
     public float? Value { get; private set; }
 
     public void Set(float val)
     {
         Value = val;
-        try { _apply(val); } catch { }
+        // the app treats a file older than a few seconds as "FanControl gone", so refresh it anyway
+        if (_written is float w && Math.Abs(w - val) < 0.5f && DateTime.UtcNow - _writtenAt < TimeSpan.FromSeconds(3)) return;
+        try
+        {
+            LinkFile.Write(_path, val);
+            _written = val;
+            _writtenAt = DateTime.UtcNow;
+        }
+        catch (Exception e) { _log("link write failed: " + e.Message); }
     }
 
-    // Control released by FanControl: fall back to the channel's default colour (never "off").
     public void Reset()
     {
         Value = null;
-        try { _apply(null); } catch { }
+        _written = null;
+        try { File.Delete(_path); } catch { }
     }
 
     public void Update() { }

@@ -11,26 +11,61 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{9CF93676
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FanControl.MsiRgb.Tests", "tests\FanControl.MsiRgb.Tests\FanControl.MsiRgb.Tests.csproj", "{CD895F2F-D9A1-466B-8BAF-CBB738D25F09}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MsiRgb.App", "src\MsiRgb.App\MsiRgb.App.csproj", "{EA81F982-B63E-49D7-B198-A7A2B76B4CC3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{2458B0FB-5F56-4199-9788-C4D76200ACAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2458B0FB-5F56-4199-9788-C4D76200ACAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2458B0FB-5F56-4199-9788-C4D76200ACAF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2458B0FB-5F56-4199-9788-C4D76200ACAF}.Debug|x64.Build.0 = Debug|Any CPU
+		{2458B0FB-5F56-4199-9788-C4D76200ACAF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2458B0FB-5F56-4199-9788-C4D76200ACAF}.Debug|x86.Build.0 = Debug|Any CPU
 		{2458B0FB-5F56-4199-9788-C4D76200ACAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2458B0FB-5F56-4199-9788-C4D76200ACAF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2458B0FB-5F56-4199-9788-C4D76200ACAF}.Release|x64.ActiveCfg = Release|Any CPU
+		{2458B0FB-5F56-4199-9788-C4D76200ACAF}.Release|x64.Build.0 = Release|Any CPU
+		{2458B0FB-5F56-4199-9788-C4D76200ACAF}.Release|x86.ActiveCfg = Release|Any CPU
+		{2458B0FB-5F56-4199-9788-C4D76200ACAF}.Release|x86.Build.0 = Release|Any CPU
 		{CD895F2F-D9A1-466B-8BAF-CBB738D25F09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CD895F2F-D9A1-466B-8BAF-CBB738D25F09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD895F2F-D9A1-466B-8BAF-CBB738D25F09}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CD895F2F-D9A1-466B-8BAF-CBB738D25F09}.Debug|x64.Build.0 = Debug|Any CPU
+		{CD895F2F-D9A1-466B-8BAF-CBB738D25F09}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CD895F2F-D9A1-466B-8BAF-CBB738D25F09}.Debug|x86.Build.0 = Debug|Any CPU
 		{CD895F2F-D9A1-466B-8BAF-CBB738D25F09}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CD895F2F-D9A1-466B-8BAF-CBB738D25F09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD895F2F-D9A1-466B-8BAF-CBB738D25F09}.Release|x64.ActiveCfg = Release|Any CPU
+		{CD895F2F-D9A1-466B-8BAF-CBB738D25F09}.Release|x64.Build.0 = Release|Any CPU
+		{CD895F2F-D9A1-466B-8BAF-CBB738D25F09}.Release|x86.ActiveCfg = Release|Any CPU
+		{CD895F2F-D9A1-466B-8BAF-CBB738D25F09}.Release|x86.Build.0 = Release|Any CPU
+		{EA81F982-B63E-49D7-B198-A7A2B76B4CC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA81F982-B63E-49D7-B198-A7A2B76B4CC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA81F982-B63E-49D7-B198-A7A2B76B4CC3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EA81F982-B63E-49D7-B198-A7A2B76B4CC3}.Debug|x64.Build.0 = Debug|Any CPU
+		{EA81F982-B63E-49D7-B198-A7A2B76B4CC3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EA81F982-B63E-49D7-B198-A7A2B76B4CC3}.Debug|x86.Build.0 = Debug|Any CPU
+		{EA81F982-B63E-49D7-B198-A7A2B76B4CC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA81F982-B63E-49D7-B198-A7A2B76B4CC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EA81F982-B63E-49D7-B198-A7A2B76B4CC3}.Release|x64.ActiveCfg = Release|Any CPU
+		{EA81F982-B63E-49D7-B198-A7A2B76B4CC3}.Release|x64.Build.0 = Release|Any CPU
+		{EA81F982-B63E-49D7-B198-A7A2B76B4CC3}.Release|x86.ActiveCfg = Release|Any CPU
+		{EA81F982-B63E-49D7-B198-A7A2B76B4CC3}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{2458B0FB-5F56-4199-9788-C4D76200ACAF} = {82DDAD51-0867-4252-8471-0B969124771F}
 		{CD895F2F-D9A1-466B-8BAF-CBB738D25F09} = {9CF93676-8DC2-4E82-AF23-304E3DA4E1FE}
+		{EA81F982-B63E-49D7-B198-A7A2B76B4CC3} = {82DDAD51-0867-4252-8471-0B969124771F}
 	EndGlobalSection
 EndGlobal
