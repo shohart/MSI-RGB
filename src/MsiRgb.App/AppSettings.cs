@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace MsiRgb;
 
-internal enum LightMode { Static, Effect, Temperature, FanControl }
+internal enum LightMode { Static, Effect, Temperature }
 
 internal enum EffectKind { Breathing, Rainbow, Blink, TwoColor }
 
@@ -13,6 +13,8 @@ internal enum EffectKind { Breathing, Rainbow, Blink, TwoColor }
 internal sealed record AppSettings
 {
     public LightMode Mode { get; init; } = LightMode.Temperature;
+    /// <summary>Master switch: off = LEDs black.</summary>
+    public bool Enabled { get; init; } = true;
     /// <summary>Software brightness 5..100 %.</summary>
     public int Brightness { get; init; } = 100;
 
@@ -29,9 +31,6 @@ internal sealed record AppSettings
     public float TempTo { get; init; } = 85;
     public string TempColorFrom { get; init; } = "#0040FF";
     public string TempColorTo { get; init; } = "#FF0000";
-
-    public string FanColorFrom { get; init; } = "#0040FF";
-    public string FanColorTo { get; init; } = "#FF0000";
 
     public static readonly JsonSerializerOptions Json = new()
     {
@@ -52,7 +51,7 @@ internal sealed record AppSettings
             if (File.Exists(path))
                 return (JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(path), Json) ?? new AppSettings()).Sanitized();
         }
-        catch { /* broken file: start from defaults, it is overwritten on the next change */ }
+        catch { /* broken file or an old mode name: defaults, overwritten on the next change */ }
         return new AppSettings();
     }
 
@@ -74,8 +73,10 @@ internal sealed record AppSettings
         }
         float from = TempFrom, to = TempTo;
         if (to <= from) to = from + 1;
+        var mode = Enum.IsDefined(Mode) ? Mode : LightMode.Temperature;
         return this with
         {
+            Mode = mode,
             Brightness = Math.Clamp(Brightness, 5, 100),
             EffectSpeed = Math.Clamp(EffectSpeed, 1, 10),
             TempFrom = from,
@@ -85,8 +86,6 @@ internal sealed record AppSettings
             EffectColor2 = C(EffectColor2, "#FF0000"),
             TempColorFrom = C(TempColorFrom, "#0040FF"),
             TempColorTo = C(TempColorTo, "#FF0000"),
-            FanColorFrom = C(FanColorFrom, "#0040FF"),
-            FanColorTo = C(FanColorTo, "#FF0000"),
         };
     }
 }

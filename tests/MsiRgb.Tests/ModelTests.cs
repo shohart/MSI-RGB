@@ -66,29 +66,28 @@ public class ColorEngineTests
     [InlineData(80f, 255, 0, 0)]
     [InlineData(99f, 255, 0, 0)]
     public void Temperature_maps_from_to(float t, int r, int g, int b)
-        => Assert.Equal(new Rgb((byte)r, (byte)g, (byte)b), ColorEngine.Compute(Temp, 0, t, null));
+        => Assert.Equal(new Rgb((byte)r, (byte)g, (byte)b), ColorEngine.Compute(Temp, 0, t));
 
     [Fact]
-    public void Missing_sensor_shows_from_colour() => Assert.Equal(new Rgb(0, 0, 255), ColorEngine.Compute(Temp, 0, null, null));
+    public void Missing_sensor_shows_from_colour() => Assert.Equal(new Rgb(0, 0, 255), ColorEngine.Compute(Temp, 0, null));
 
     [Fact]
     public void Brightness_applies_to_every_mode()
-        => Assert.Equal(new Rgb(0, 0, 128), ColorEngine.Compute(Temp with { Brightness = 50 }, 0, 10, null));
+        => Assert.Equal(new Rgb(0, 0, 128), ColorEngine.Compute(Temp with { Brightness = 50 }, 0, 10));
 
     [Fact]
-    public void FanControl_percent_and_no_link()
+    public void Master_switch_off_is_black()
     {
-        var s = new AppSettings { Mode = LightMode.FanControl, FanColorFrom = "#000000", FanColorTo = "#FFFFFF" };
-        Assert.Equal(new Rgb(128, 128, 128), ColorEngine.Compute(s, 0, null, 50));
-        Assert.Equal(new Rgb(0, 0, 0), ColorEngine.Compute(s, 0, 70, null));
+        Assert.Equal(new Rgb(0, 0, 0), ColorEngine.Compute(Temp with { Enabled = false }, 0, 99));
+        Assert.False(ColorEngine.IsAnimated(new AppSettings { Mode = LightMode.Effect, Enabled = false }));
     }
 
     [Fact]
     public void Breathing_goes_dim_and_full()
     {
         var s = new AppSettings { Mode = LightMode.Effect, Effect = EffectKind.Breathing, EffectColor1 = "#FF0000", EffectSpeed = 10 }; // 1 s period
-        Assert.True(ColorEngine.Compute(s, 0, null, null).R < 20);
-        Assert.Equal(255, ColorEngine.Compute(s, 0.5, null, null).R);
+        Assert.True(ColorEngine.Compute(s, 0, null).R < 20);
+        Assert.Equal(255, ColorEngine.Compute(s, 0.5, null).R);
         Assert.True(ColorEngine.IsAnimated(s));
         Assert.False(ColorEngine.IsAnimated(Temp));
     }
@@ -97,18 +96,18 @@ public class ColorEngineTests
     public void Blink_and_rainbow()
     {
         var blink = new AppSettings { Mode = LightMode.Effect, Effect = EffectKind.Blink, EffectColor1 = "#00FF00", EffectSpeed = 10 };
-        Assert.Equal(new Rgb(0, 255, 0), ColorEngine.Compute(blink, 0.25, null, null));
-        Assert.Equal(new Rgb(0, 0, 0), ColorEngine.Compute(blink, 0.75, null, null));
+        Assert.Equal(new Rgb(0, 255, 0), ColorEngine.Compute(blink, 0.25, null));
+        Assert.Equal(new Rgb(0, 0, 0), ColorEngine.Compute(blink, 0.75, null));
         var rainbow = blink with { Effect = EffectKind.Rainbow };
-        Assert.Equal(new Rgb(0, 255, 0), ColorEngine.Compute(rainbow, 1.0 / 3, null, null));
+        Assert.Equal(new Rgb(0, 255, 0), ColorEngine.Compute(rainbow, 1.0 / 3, null));
     }
 
     [Fact]
     public void Two_colour_crossfade()
     {
         var s = new AppSettings { Mode = LightMode.Effect, Effect = EffectKind.TwoColor, EffectColor1 = "#0000FF", EffectColor2 = "#FF0000", EffectSpeed = 10 };
-        Assert.Equal(new Rgb(0, 0, 255), ColorEngine.Compute(s, 0, null, null));
-        Assert.Equal(new Rgb(255, 0, 0), ColorEngine.Compute(s, 0.5, null, null));
+        Assert.Equal(new Rgb(0, 0, 255), ColorEngine.Compute(s, 0, null));
+        Assert.Equal(new Rgb(255, 0, 0), ColorEngine.Compute(s, 0.5, null));
     }
 
     [Fact]
@@ -143,26 +142,20 @@ public class SettingsTests
     }
 
     [Fact]
+    public void Old_fancontrol_mode_falls_back_to_defaults()
+    {
+        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json");
+        File.WriteAllText(path, """{ "mode": "fanControl", "brightness": 50 }""");
+        try { Assert.Equal(LightMode.Temperature, AppSettings.Load(path).Mode); }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
     public void Broken_file_gives_defaults()
     {
         var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json");
         File.WriteAllText(path, "{ not json");
         try { Assert.Equal(new AppSettings(), AppSettings.Load(path)); }
         finally { File.Delete(path); }
-    }
-}
-
-public class LinkFileTests
-{
-    [Fact]
-    public void Write_read_and_staleness()
-    {
-        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "fc.txt");
-        LinkFile.Write(path, 42.5f);
-        Assert.Equal(42.5f, LinkFile.Read(path, TimeSpan.FromSeconds(10)));
-        File.WriteAllText(path, "42 1000"); // 1970
-        Assert.Null(LinkFile.Read(path, TimeSpan.FromSeconds(10)));
-        Assert.Null(LinkFile.Read(path + ".missing", TimeSpan.FromSeconds(10)));
-        Directory.Delete(Path.GetDirectoryName(path)!, true);
     }
 }

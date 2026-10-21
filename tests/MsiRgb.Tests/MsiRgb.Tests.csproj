@@ -12,7 +12,6 @@
   <ItemGroup>
     <!-- pure logic only: hardware/UI code is Windows-only -->
     <Compile Include="..\..\src\MsiRgb.Core\Model.cs" Link="Linked\Model.cs" />
-    <Compile Include="..\..\src\MsiRgb.Core\LinkFile.cs" Link="Linked\LinkFile.cs" />
     <Compile Include="..\..\src\MsiRgb.App\AppSettings.cs" Link="Linked\AppSettings.cs" />
     <Compile Include="..\..\src\MsiRgb.App\ColorEngine.cs" Link="Linked\ColorEngine.cs" />
   </ItemGroup>

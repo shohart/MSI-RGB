@@ -21,6 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ---
-src/FanControl.MsiRgb/Resources/SmbusI801.bin is the signed PawnIO SmbusI801
+src/MsiRgb.Core/Resources/SmbusI801.bin is the signed PawnIO SmbusI801
 module from https://github.com/namazso/PawnIO.Modules (release 0.2.11),
 licensed under LGPL-2.1 — see Resources/PawnIO.Modules.COPYING.

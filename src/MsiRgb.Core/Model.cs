@@ -59,6 +59,16 @@ internal readonly record struct Rgb(byte R, byte G, byte B)
         return new Rgb(B8(r + m), B8(g + m), B8(b + m));
     }
 
+    /// <summary>Hue in degrees 0..360, saturation and value 0..1.</summary>
+    public (float H, float S, float V) ToHsv()
+    {
+        float r = R / 255f, g = G / 255f, b = B / 255f;
+        float max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b)), d = max - min;
+        float h = d == 0 ? 0 : max == r ? 60 * ((g - b) / d % 6) : max == g ? 60 * ((b - r) / d + 2) : 60 * ((r - g) / d + 4);
+        if (h < 0) h += 360;
+        return (h, max == 0 ? 0 : d / max, max);
+    }
+
     private static byte L(byte a, byte b, float t) => (byte)Math.Round(a + (b - a) * t);
     private static byte B8(float f) => (byte)Math.Round(Math.Clamp(f, 0f, 1f) * 255f);
 }

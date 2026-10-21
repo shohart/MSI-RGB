@@ -9,7 +9,7 @@ namespace MsiRgb;
 
 internal sealed record SensorInfo(string Id, string Name, float? Value);
 
-internal sealed record EngineStatus(Rgb Color, float? Temperature, float? FanPercent, string? Error, IReadOnlyList<SensorInfo> Sensors);
+internal sealed record EngineStatus(Rgb Color, float? Temperature, string? Error, IReadOnlyList<SensorInfo> Sensors);
 
 /// <summary>
 /// The only writer of the RGB MCU. One background thread owns PawnIO, LibreHardwareMonitor and timing;
@@ -20,14 +20,13 @@ internal sealed class LightEngine : IDisposable
     private static readonly TimeSpan SensorInterval = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan Reassert = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan SuspendGap = TimeSpan.FromSeconds(10);
-    private static readonly TimeSpan FanLinkMaxAge = TimeSpan.FromSeconds(10);
     private const int StaticTickMs = 200;
     private const int FrameMs = 40;
 
     private readonly Thread _thread;
     private readonly AutoResetEvent _wake = new(false);
     private volatile AppSettings _settings;
-    private volatile EngineStatus _status = new(new Rgb(0, 0, 0), null, null, "запуск…", Array.Empty<SensorInfo>());
+    private volatile EngineStatus _status = new(new Rgb(0, 0, 0), null, "запуск…", Array.Empty<SensorInfo>());
     private volatile bool _stop;
 
     public LightEngine(AppSettings settings)
@@ -84,8 +83,7 @@ internal sealed class LightEngine : IDisposable
                     smoothTemp = raw is float r ? (smoothTemp is float p ? p + (r - p) * 0.5f : r) : null;
                 }
 
-                float? fan = s.Mode == LightMode.FanControl ? LinkFile.Read(LinkFile.DefaultPath, FanLinkMaxAge) : null;
-                var target = ColorEngine.Compute(s, clock.Elapsed.TotalSeconds, smoothTemp, fan);
+                var target = ColorEngine.Compute(s, clock.Elapsed.TotalSeconds, smoothTemp);
 
                 if (!initialized)
                 {
@@ -103,11 +101,10 @@ internal sealed class LightEngine : IDisposable
                 }
                 error = s.Mode switch
                 {
-                    LightMode.Temperature when smoothTemp == null => "датчик не найден",
-                    LightMode.FanControl when fan == null => "нет связи с FanControl",
+                    LightMode.Temperature when s.Enabled && smoothTemp == null => "датчик не найден",
                     _ => null,
                 };
-                _status = new EngineStatus(target, smoothTemp, fan, error, sensors);
+                _status = new EngineStatus(target, smoothTemp, error, sensors);
             }
             catch (Exception e)
             {
