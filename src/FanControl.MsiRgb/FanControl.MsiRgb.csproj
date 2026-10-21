@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <Version>0.1.0</Version>
+    <Product>FanControl MSI RGB</Product>
+    <Description>FanControl plugin: drive MSI Renesas-MCU motherboard RGB from temperature curves.</Description>
+    <!-- Folder holding FanControl.Plugins.dll (FanControl install dir, or ../../lib for CI) -->
+    <FanControlDir Condition="'$(FanControlDir)' == ''">$(MSBuildThisFileDirectory)..\..\lib</FanControlDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Private=false: never ship a second copy, FanControl must use its own (type identity) -->
+    <Reference Include="FanControl.Plugins">
+      <HintPath>$(FanControlDir)\FanControl.Plugins.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\SmbusI801.bin" LogicalName="SmbusI801.bin" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FanControl.MsiRgb.Tests" />
+  </ItemGroup>
+
+</Project>
