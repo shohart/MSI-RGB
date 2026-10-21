@@ -46,7 +46,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         FxRainbow.Checked += (_, _) => Change(_s with { Effect = EffectKind.Rainbow });
         FxBlink.Checked += (_, _) => Change(_s with { Effect = EffectKind.Blink });
         FxTwoColor.Checked += (_, _) => Change(_s with { Effect = EffectKind.TwoColor });
-        Speed.UserChanged += v => Change(_s with { EffectSpeed = 1 + (int)Math.Round(v * 9) });
+        Speed.UserChanged += v => Change(_s.Effect == EffectKind.Breathing
+            ? _s with { BreathRate = RateFromSlider(v) }
+            : _s with { EffectSpeed = 1 + (int)Math.Round(v * 9) });
         FxEdit1.Checked += (_, _) => LoadSettings(_s);
         FxEdit2.Checked += (_, _) => LoadSettings(_s);
         FxPicker.ColorChanged += c => Change(FxEditingSecond ? _s with { EffectColor2 = c.ToString() } : _s with { EffectColor1 = c.ToString() });
@@ -57,6 +59,10 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         TempEditFrom.Checked += (_, _) => LoadSettings(_s);
         TempEditTo.Checked += (_, _) => LoadSettings(_s);
         TempPicker.ColorChanged += c => Change(TempEditTo.IsChecked == true ? _s with { TempColorTo = c.ToString() } : _s with { TempColorFrom = c.ToString() });
+        TempBreathSwitch.Checked += (_, _) => Change(_s with { TempBreathing = true });
+        TempBreathSwitch.Unchecked += (_, _) => Change(_s with { TempBreathing = false });
+        BreathCold.UserChanged += v => Change(_s with { TempBreathRateCold = RateFromSlider(v) });
+        BreathHot.UserChanged += v => Change(_s with { TempBreathRateHot = RateFromSlider(v) });
         TempMarkerCanvas.SizeChanged += (_, _) => PlaceMarker(_lastTemp);
 
         LoadSettings(s);
@@ -121,8 +127,11 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             FxRainbow.IsChecked = s.Effect == EffectKind.Rainbow;
             FxBlink.IsChecked = s.Effect == EffectKind.Blink;
             FxTwoColor.IsChecked = s.Effect == EffectKind.TwoColor;
-            Speed.Value = (s.EffectSpeed - 1) / 9.0;
-            SpeedValue.Text = $"{s.EffectSpeed} из 10";
+            bool breathing = s.Effect == EffectKind.Breathing;
+            SpeedTitle.Text = breathing ? "Частота дыхания" : "Скорость";
+            Speed.Value = breathing ? SliderFromRate(s.BreathRate) : (s.EffectSpeed - 1) / 9.0;
+            SpeedValue.Text = breathing ? Breaths(s.BreathRate) : $"{s.EffectSpeed} из 10";
+            SpeedHint.Visibility = Vis(breathing);
             FxColorCard.Visibility = Vis(s.Effect != EffectKind.Rainbow);
             FxWhich.Visibility = Vis(s.Effect == EffectKind.TwoColor);
             FxDot1.Fill = Brush(s.EffectColor1);
@@ -141,9 +150,36 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             ScaleFrom.Text = $"{s.TempFrom:0} °C";
             ScaleTo.Text = $"{s.TempTo:0} °C";
             SelectSensor();
+
+            TempBreathSwitch.IsChecked = s.TempBreathing;
+            TempBreathRates.Visibility = Vis(s.TempBreathing);
+            BreathCold.Value = SliderFromRate(s.TempBreathRateCold);
+            BreathHot.Value = SliderFromRate(s.TempBreathRateHot);
+            BreathColdValue.Text = Breaths(s.TempBreathRateCold);
+            BreathHotValue.Text = Breaths(s.TempBreathRateHot);
+            BreathColdDot.Fill = Brush(s.TempColorFrom);
+            BreathHotDot.Fill = Brush(s.TempColorTo);
+            BreathCold.TrackBrush = RateTrack(s.TempColorFrom);
+            BreathHot.TrackBrush = RateTrack(s.TempColorTo);
         }
         finally { _loading = false; }
     }
+
+    private static int RateFromSlider(double v)
+        => ColorEngine.MinBreathRate + (int)Math.Round(v * (ColorEngine.MaxBreathRate - ColorEngine.MinBreathRate));
+
+    private static double SliderFromRate(int r)
+        => (r - ColorEngine.MinBreathRate) / (double)(ColorEngine.MaxBreathRate - ColorEngine.MinBreathRate);
+
+    private static string Breaths(double rate)
+    {
+        int n = (int)Math.Round(rate);
+        string word = (n % 100 is >= 11 and <= 14) ? "вдохов" : (n % 10) switch { 1 => "вдох", 2 or 3 or 4 => "вдоха", _ => "вдохов" };
+        return $"{n} {word}/мин";
+    }
+
+    private static Brush RateTrack(string hex)
+        => GradientSlider.Horizontal(WpfColor.FromRgb(70, 70, 70), ColorPicker.ToWpf(Rgb.Parse(hex)));
 
     private float? _lastTemp;
 
@@ -178,6 +214,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         _lastTemp = st.Temperature;
         TempNow.Text = st.Temperature is float tv ? $"{tv:0} °C" : "— °C";
         PlaceMarker(st.Temperature);
+        BreathNow.Text = $"Сейчас: {Breaths(ColorEngine.BreathRate(_s, st.Temperature))}. Между порогами частота меняется плавно; " +
+                         "на высокой свет разгорается быстрее, чем гаснет.";
 
         var ids = st.Sensors.Select(x => x.Id).ToList();
         if (!SensorBox.IsDropDownOpen && !ids.SequenceEqual(_sensorIds))

@@ -49,6 +49,7 @@ internal sealed class LightEngine : IDisposable
         RenesasLed? led = null;
         Computer? computer = null;
         var clock = Stopwatch.StartNew();
+        double phase = 0, lastTick = 0;
         DateTime lastLoop = DateTime.UtcNow, lastSensors = DateTime.MinValue, lastWrite = DateTime.MinValue;
         Rgb? written = null;
         bool initialized = false;
@@ -83,7 +84,11 @@ internal sealed class LightEngine : IDisposable
                     smoothTemp = raw is float r ? (smoothTemp is float p ? p + (r - p) * 0.5f : r) : null;
                 }
 
-                var target = ColorEngine.Compute(s, clock.Elapsed.TotalSeconds, smoothTemp);
+                double tick = clock.Elapsed.TotalSeconds;
+                // cap the step so a stall (or sleep) resumes the animation where it was instead of skipping ahead
+                phase += Math.Min(tick - lastTick, 0.25) * ColorEngine.CyclesPerSecond(s, smoothTemp);
+                lastTick = tick;
+                var target = ColorEngine.Compute(s, phase, smoothTemp);
 
                 if (!initialized)
                 {

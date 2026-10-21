@@ -199,13 +199,15 @@
                                 </WrapPanel>
                                 <DockPanel Margin="0,10,0,8">
                                     <TextBlock x:Name="SpeedValue" DockPanel.Dock="Right" Text="5" Style="{StaticResource Hint}" />
-                                    <TextBlock Text="Скорость" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                    <TextBlock x:Name="SpeedTitle" Text="Скорость" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                                 </DockPanel>
                                 <c:GradientSlider x:Name="Speed" Step="0.112" />
                                 <DockPanel Margin="2,2,2,0">
                                     <TextBlock DockPanel.Dock="Right" Text="быстро" FontSize="12" Style="{StaticResource Hint}" />
                                     <TextBlock Text="медленно" FontSize="12" Style="{StaticResource Hint}" />
                                 </DockPanel>
+                                <TextBlock x:Name="SpeedHint" Margin="0,8,0,0" FontSize="12" Style="{StaticResource Hint}" TextWrapping="Wrap"
+                                           Text="На высокой частоте свет разгорается быстрее, чем гаснет — как настоящий вдох." />
                             </StackPanel>
                         </ui:Card>
                         <ui:Card x:Name="FxColorCard" Padding="20" Margin="0,12,0,0">
@@ -289,7 +291,34 @@
                                     <TextBlock x:Name="ScaleTo" Text="85 °C" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontSize="12" Style="{StaticResource Hint}" />
                                 </Grid>
 
+                                <!-- breathing whose rate follows the temperature -->
                                 <Border Height="1" Margin="0,4,0,16" Background="{DynamicResource DividerStrokeColorDefaultBrush}" />
+                                <DockPanel>
+                                    <ui:ToggleSwitch x:Name="TempBreathSwitch" DockPanel.Dock="Right" VerticalAlignment="Center" />
+                                    <ui:SymbolIcon Symbol="HeartPulse24" FontSize="22" DockPanel.Dock="Left" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                    <StackPanel>
+                                        <TextBlock Text="Дыхание" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                        <TextBlock Text="Чем горячее, тем чаще дышит подсветка" FontSize="12" Style="{StaticResource Hint}" />
+                                    </StackPanel>
+                                </DockPanel>
+                                <StackPanel x:Name="TempBreathRates" Margin="0,16,0,0">
+                                    <DockPanel Margin="0,0,0,8">
+                                        <TextBlock x:Name="BreathColdValue" DockPanel.Dock="Right" Text="8 вдохов/мин" Style="{StaticResource Hint}" />
+                                        <Ellipse x:Name="BreathColdDot" DockPanel.Dock="Left" Width="12" Height="12" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="Холодно" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                    </DockPanel>
+                                    <c:GradientSlider x:Name="BreathCold" Step="0.018" />
+                                    <DockPanel Margin="0,14,0,8">
+                                        <TextBlock x:Name="BreathHotValue" DockPanel.Dock="Right" Text="45 вдохов/мин" Style="{StaticResource Hint}" />
+                                        <Ellipse x:Name="BreathHotDot" DockPanel.Dock="Left" Width="12" Height="12" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="Горячо" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                    </DockPanel>
+                                    <c:GradientSlider x:Name="BreathHot" Step="0.018" />
+                                    <TextBlock x:Name="BreathNow" Margin="0,10,0,0" FontSize="12" Style="{StaticResource Hint}" TextWrapping="Wrap"
+                                               Text="Сейчас: 20 вдохов/мин. Между порогами частота меняется плавно; на высокой свет разгорается быстрее, чем гаснет." />
+                                </StackPanel>
+
+                                <Border Height="1" Margin="0,16,0,16" Background="{DynamicResource DividerStrokeColorDefaultBrush}" />
                                 <TextBlock x:Name="TempColorTitle" Text="Цвет «холодно»" Style="{StaticResource Section}" />
                                 <c:ColorPicker x:Name="TempPicker" />
                             </StackPanel>

@@ -117,13 +117,15 @@ public partial class App : Application
         var pages = new (string Name, AppSettings S, Rgb Color, float? T)[]
         {
             ("temperature", new AppSettings(), new Rgb(0x8F, 0x20, 0x8F), 62),
+            ("temperature-breathing", new AppSettings { TempBreathing = true }, new Rgb(0x8F, 0x20, 0x8F), 62),
+            ("breathing", new AppSettings { Mode = LightMode.Effect, Effect = EffectKind.Breathing }, new Rgb(0, 0x30, 0xC0), null),
             ("static", new AppSettings { Mode = LightMode.Static, StaticColor = "#00FF80" }, new Rgb(0, 255, 128), null),
             ("effect", new AppSettings { Mode = LightMode.Effect, Effect = EffectKind.TwoColor }, new Rgb(0x80, 0x20, 0xA0), null),
             ("off", new AppSettings { Enabled = false, Mode = LightMode.Static }, new Rgb(0, 0, 0), null),
         };
         foreach (var (name, s, color, t) in pages)
         {
-            var w = new MainWindow(s, _ => { }) { Left = -20000, Top = -20000, ShowActivated = false, WindowBackdropType = Wpf.Ui.Controls.WindowBackdropType.None };
+            var w = new MainWindow(s, _ => { }) { Height = name == "temperature-breathing" ? 1300 : 830, Left = -20000, Top = -20000, ShowActivated = false, WindowBackdropType = Wpf.Ui.Controls.WindowBackdropType.None };
             w.Show();
             w.ShowStatus(new EngineStatus(color, t, null, sensors));
             w.UpdateLayout();
@@ -139,5 +141,35 @@ public partial class App : Application
             using (var f = File.Create(Path.Combine(dir, name + ".png"))) enc.Save(f);
             w.CloseForReal();
         }
+
+        // tray icon in every state, at the real small-icon size and a 16 px one, side by side on dark and light strips
+        var states = new[]
+        {
+            new IconState(IconMode.Static, new Rgb(0, 64, 255), 0, 0),
+            new IconState(IconMode.Static, new Rgb(0, 255, 128), 0, 0),
+            new IconState(IconMode.Effect, new Rgb(255, 0, 128), 0, 20),
+            new IconState(IconMode.Effect, new Rgb(10, 3, 0), 0, 80),
+            new IconState(IconMode.Temperature, new Rgb(0x8F, 0x20, 0x8F), 0.5f, 0),
+            new IconState(IconMode.Temperature, new Rgb(255, 0, 0), 1f, 0),
+            new IconState(IconMode.Off, new Rgb(0, 0, 0), 0, 0),
+            new IconState(IconMode.Error, new Rgb(0, 0, 0), 0, 0),
+        };
+        const int big = 40; // small-icon size at 250 %
+        using var sheet = new System.Drawing.Bitmap(states.Length * (big + 12) + 12, 2 * (big + 16 + 24));
+        using (var g = System.Drawing.Graphics.FromImage(sheet))
+        {
+            g.Clear(System.Drawing.Color.FromArgb(32, 32, 32));
+            g.FillRectangle(new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(238, 238, 238)), 0, sheet.Height / 2, sheet.Width, sheet.Height / 2);
+            for (int row = 0; row < 2; row++)
+                for (int i = 0; i < states.Length; i++)
+                {
+                    int x = 12 + i * (big + 12), y = row * sheet.Height / 2 + 8;
+                    using var a = TrayIconArt.Render(big, states[i]);
+                    using var b = TrayIconArt.Render(16, states[i]);
+                    g.DrawImage(a, x, y);
+                    g.DrawImage(b, x, y + big + 4);
+                }
+        }
+        sheet.Save(Path.Combine(dir, "tray.png"), System.Drawing.Imaging.ImageFormat.Png);
     }
 }

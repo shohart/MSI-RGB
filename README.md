@@ -8,11 +8,16 @@ MSI's Renesas microcontroller. One tray app, no MSI Center, no services.
 | ![](docs/temperature.png) | ![](docs/effect.png) | ![](docs/static.png) |
 
 * **Colour**: any static colour (swatches, hue/saturation sliders, #HEX)
-* **Effect**: breathing, rainbow, blink, two-colour crossfade, with speed control
+* **Effect**: breathing (rate in breaths per minute), rainbow, blink, two-colour crossfade, with speed control.
+  Fast breathing inhales quicker than it exhales, like the real thing
 * **Temperature**: like Mystic Light's "temperature" mode, but working. Pick any sensor
   (CPU package, cores, GPU, RAM, ...), a "cold" and a "hot" threshold and their colours; in between the
-  colour fades smoothly. Sensors come from [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor).
-* global brightness, on/off, tray icon in the current colour, start with Windows (logon task, no UAC prompt)
+  colour fades smoothly. Optionally the light *breathes*, slowly when cold and faster as it heats up
+  (both rates adjustable). Sensors come from [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor).
+* global brightness, on/off, start with Windows (logon task, no UAC prompt)
+* the tray icon mirrors the LEDs live: colour, breathing, a spinning ring for effects, a gauge for temperature
+
+  ![](docs/tray.png)
 
 ## Supported boards
 

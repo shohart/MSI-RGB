@@ -85,11 +85,39 @@ public class ColorEngineTests
     [Fact]
     public void Breathing_goes_dim_and_full()
     {
-        var s = new AppSettings { Mode = LightMode.Effect, Effect = EffectKind.Breathing, EffectColor1 = "#FF0000", EffectSpeed = 10 }; // 1 s period
+        var s = new AppSettings { Mode = LightMode.Effect, Effect = EffectKind.Breathing, EffectColor1 = "#FF0000", BreathRate = 10 };
         Assert.True(ColorEngine.Compute(s, 0, null).R < 20);
-        Assert.Equal(255, ColorEngine.Compute(s, 0.5, null).R);
+        Assert.Equal(255, ColorEngine.Compute(s, 0.5, null).R); // slow breathing is symmetric
+        Assert.Equal(10.0 / 60, ColorEngine.CyclesPerSecond(s, null), 6);
         Assert.True(ColorEngine.IsAnimated(s));
         Assert.False(ColorEngine.IsAnimated(Temp));
+    }
+
+    [Fact]
+    public void Fast_breathing_inhales_quicker_than_it_exhales()
+    {
+        // top rate: peak at a quarter of the cycle, then a long fade
+        Assert.Equal(1f, ColorEngine.Breath(0.25, ColorEngine.MaxBreathRate), 3);
+        Assert.True(ColorEngine.Breath(0.2, 60) > 0.9f); // fast: almost fully lit after a fifth of the cycle
+        Assert.True(ColorEngine.Breath(0.2, 6) < 0.4f);  // slow: still rising evenly
+        Assert.Equal(0f, ColorEngine.Breath(0, 60), 3);
+        Assert.Equal(0f, ColorEngine.Breath(0.999999, 60), 3);
+        Assert.Equal(1f, ColorEngine.Breath(1.5, 6), 3); // phase wraps
+    }
+
+    [Fact]
+    public void Temperature_breathing_speeds_up_with_heat()
+    {
+        var s = Temp with { TempBreathing = true, TempBreathRateCold = 6, TempBreathRateHot = 60 };
+        Assert.True(ColorEngine.IsAnimated(s));
+        Assert.Equal(6.0 / 60, ColorEngine.CyclesPerSecond(s, -100), 6);
+        Assert.Equal(6.0 / 60, ColorEngine.CyclesPerSecond(s, null), 6);
+        Assert.Equal(1.0, ColorEngine.CyclesPerSecond(s, 1000), 6);
+        Assert.True(ColorEngine.CyclesPerSecond(s, 50) > ColorEngine.CyclesPerSecond(s, 40));
+        // colour still follows the temperature, breathing only modulates it
+        Assert.True(ColorEngine.Compute(s, 0, 100).R < 20);
+        Assert.Equal(new Rgb(255, 0, 0), ColorEngine.Compute(s, 0.25, 100));
+        Assert.Equal(0, ColorEngine.CyclesPerSecond(Temp, 50));
     }
 
     [Fact]

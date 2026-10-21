@@ -1,17 +1,16 @@
 using System;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace MsiRgb;
 
-/// <summary>Notification-area icon: a dot in the current colour, quick mode switch, on/off.</summary>
+/// <summary>Notification-area icon mirroring the live LED state (see <see cref="TrayIconArt"/>), quick mode switch, on/off.</summary>
 internal sealed class TrayIcon : IDisposable
 {
     private readonly NotifyIcon _icon;
     private readonly ToolStripMenuItem _static, _effect, _temp, _enabled;
-    private Rgb? _shown;
+    private IconState? _shown;
     private IntPtr _handle;
     private DateTime _lastIcon;
 
@@ -31,7 +30,7 @@ internal sealed class TrayIcon : IDisposable
 
         _icon = new NotifyIcon { Text = "MSI RGB", ContextMenuStrip = menu, Visible = true };
         _icon.MouseClick += (_, e) => { if (e.Button == MouseButtons.Left) show(); };
-        SetIcon(new Rgb(0, 64, 255));
+        SetIcon(new IconState(IconMode.Static, new Rgb(0, 64, 255), 0, 0));
     }
 
     public void Sync(AppSettings s)
@@ -46,35 +45,40 @@ internal sealed class TrayIcon : IDisposable
 
     public void ShowStatus(EngineStatus st, AppSettings s)
     {
+        string breath = $"дыхание {ColorEngine.BreathRate(s, st.Temperature):0}/мин";
         string text = !s.Enabled ? "MSI RGB — выключено"
             : st.Error != null ? $"MSI RGB — {st.Error}"
-            : s.Mode == LightMode.Temperature && st.Temperature is float t ? $"MSI RGB — {t:0} °C"
+            : s.Mode == LightMode.Temperature && st.Temperature is float t ? $"MSI RGB — {t:0} °C" + (s.TempBreathing ? $" · {breath}" : "")
+            : s.Mode == LightMode.Effect ? "MSI RGB — " + s.Effect switch
+            {
+                EffectKind.Breathing => breath,
+                EffectKind.Rainbow => "радуга",
+                EffectKind.Blink => "мигание",
+                _ => "переливание",
+            }
             : $"MSI RGB — {st.Color}";
         if (_icon.Text != text) _icon.Text = text.Length > 63 ? text[..63] : text;
-        // effects change colour every frame; the icon follows at ~3 Hz, plenty for a 16 px dot
-        if (_shown != st.Color && DateTime.UtcNow - _lastIcon > TimeSpan.FromMilliseconds(300)) SetIcon(st.Color);
+
+        var mode = !s.Enabled ? IconMode.Off
+            : st.Error != null ? IconMode.Error
+            : s.Mode switch { LightMode.Effect => IconMode.Effect, LightMode.Temperature => IconMode.Temperature, _ => IconMode.Static };
+        // the effect ring turns a quarter turn per second; static states compare equal and aren't redrawn
+        float spin = mode == IconMode.Effect ? (float)(Environment.TickCount64 / 1000.0 * 90 % 360) : 0;
+        var state = new IconState(mode, st.Color, mode == IconMode.Temperature ? ColorEngine.Heat(s, st.Temperature) : 0, spin);
+        // effects change colour every frame; the icon follows at ~10 Hz, the poll rate
+        if (_shown != state && DateTime.UtcNow - _lastIcon > TimeSpan.FromMilliseconds(90)) SetIcon(state);
     }
 
-    private void SetIcon(Rgb c)
+    private void SetIcon(IconState state)
     {
-        int size = SystemInformation.SmallIconSize.Width;
-        using var bmp = new Bitmap(size, size);
-        using (var g = Graphics.FromImage(bmp))
-        {
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            var r = new RectangleF(1, 1, size - 2.5f, size - 2.5f);
-            using var fill = new SolidBrush(c == new Rgb(0, 0, 0) ? Color.FromArgb(60, 60, 60) : Color.FromArgb(c.R, c.G, c.B));
-            g.FillEllipse(fill, r);
-            using var pen = new Pen(Color.FromArgb(200, 255, 255, 255), 1.2f);
-            g.DrawEllipse(pen, r);
-        }
+        using var bmp = TrayIconArt.Render(SystemInformation.SmallIconSize.Width, state);
         var h = bmp.GetHicon();
         var old = _icon.Icon;
         _icon.Icon = Icon.FromHandle(h);
         old?.Dispose();
         if (_handle != IntPtr.Zero) DestroyIcon(_handle);
         _handle = h;
-        _shown = c;
+        _shown = state;
         _lastIcon = DateTime.UtcNow;
     }
 

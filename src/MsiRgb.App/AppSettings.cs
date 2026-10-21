@@ -25,12 +25,18 @@ internal sealed record AppSettings
     public string EffectColor2 { get; init; } = "#FF0000";
     /// <summary>1 (slow) .. 10 (fast).</summary>
     public int EffectSpeed { get; init; } = 5;
+    /// <summary>Breathing effect: breaths per minute.</summary>
+    public int BreathRate { get; init; } = 15;
 
     public string? SensorId { get; init; } = "/intelcpu/0/temperature/10"; // CPU Package
     public float TempFrom { get; init; } = 40;
     public float TempTo { get; init; } = 85;
     public string TempColorFrom { get; init; } = "#0040FF";
     public string TempColorTo { get; init; } = "#FF0000";
+    /// <summary>Temperature mode breathes, slower when cold and faster when hot (breaths per minute).</summary>
+    public bool TempBreathing { get; init; }
+    public int TempBreathRateCold { get; init; } = 8;
+    public int TempBreathRateHot { get; init; } = 45;
 
     public static readonly JsonSerializerOptions Json = new()
     {
@@ -71,6 +77,7 @@ internal sealed record AppSettings
             try { return s != null ? Rgb.Parse(s).ToString() : fallback; }
             catch (FormatException) { return fallback; }
         }
+        static int Rate(int r) => Math.Clamp(r, ColorEngine.MinBreathRate, ColorEngine.MaxBreathRate);
         float from = TempFrom, to = TempTo;
         if (to <= from) to = from + 1;
         var mode = Enum.IsDefined(Mode) ? Mode : LightMode.Temperature;
@@ -79,6 +86,9 @@ internal sealed record AppSettings
             Mode = mode,
             Brightness = Math.Clamp(Brightness, 5, 100),
             EffectSpeed = Math.Clamp(EffectSpeed, 1, 10),
+            BreathRate = Rate(BreathRate),
+            TempBreathRateCold = Rate(TempBreathRateCold),
+            TempBreathRateHot = Rate(TempBreathRateHot),
             TempFrom = from,
             TempTo = to,
             StaticColor = C(StaticColor, "#0040FF"),
