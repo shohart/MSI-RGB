@@ -7,8 +7,24 @@ namespace FanControl.MsiRgb;
 
 internal readonly record struct Rgb(byte R, byte G, byte B)
 {
+    private static readonly Dictionary<string, Rgb> Named = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["red"] = new(255, 0, 0), ["красный"] = new(255, 0, 0),
+        ["orange"] = new(255, 96, 0), ["оранжевый"] = new(255, 96, 0),
+        ["yellow"] = new(255, 192, 0), ["жёлтый"] = new(255, 192, 0), ["желтый"] = new(255, 192, 0),
+        ["green"] = new(0, 255, 0), ["зелёный"] = new(0, 255, 0), ["зеленый"] = new(0, 255, 0),
+        ["cyan"] = new(0, 255, 255), ["голубой"] = new(0, 255, 255),
+        ["blue"] = new(0, 64, 255), ["синий"] = new(0, 64, 255),
+        ["purple"] = new(160, 0, 255), ["фиолетовый"] = new(160, 0, 255),
+        ["pink"] = new(255, 0, 128), ["розовый"] = new(255, 0, 128),
+        ["white"] = new(255, 255, 255), ["белый"] = new(255, 255, 255),
+        ["off"] = new(0, 0, 0), ["выкл"] = new(0, 0, 0), ["чёрный"] = new(0, 0, 0), ["черный"] = new(0, 0, 0),
+    };
+
+    /// <summary>#RRGGBB, RRGGBB or a colour name (English / Russian).</summary>
     public static Rgb Parse(string s)
     {
+        if (Named.TryGetValue(s.Trim(), out var named)) return named;
         var hex = s.Trim().TrimStart('#');
         if (hex.Length != 6 || !uint.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var v))
             throw new FormatException($"colour '{s}' must be #RRGGBB");

@@ -41,6 +41,8 @@ public class ModelTests
         Assert.Equal(new Rgb(0x12, 0xAB, 0xEF), Rgb.Parse("#12abef"));
         Assert.Equal(new Rgb(0xFF, 0, 0), Rgb.Parse("FF0000"));
         Assert.Throws<FormatException>(() => Rgb.Parse("#FFF"));
+        Assert.Equal(new Rgb(255, 0, 0), Rgb.Parse(" Красный "));
+        Assert.Equal(Rgb.Parse("желтый"), Rgb.Parse("жёлтый"));
     }
 
     [Fact]
@@ -88,7 +90,29 @@ public class ConfigTests
         var json = System.Text.Json.JsonSerializer.Serialize(new PluginConfig(), PluginConfig.Json);
         var cfg = PluginConfig.Parse(json);
         Assert.Single(cfg.Channels);
-        Assert.Equal(4, cfg.Channels[0].Stops.Count);
+        Assert.Null(cfg.Channels[0].Stops);
+        Assert.Equal("MSI RGB: синий → красный", cfg.Channels[0].DisplayName);
+        Assert.DoesNotContain("stops", json);
+    }
+
+    [Fact]
+    public void From_to_names_make_two_stop_gradient()
+    {
+        var cfg = PluginConfig.Parse("""{ "channels": [ { "from": "зелёный", "to": "#FF00FF" } ] }""");
+        var ch = new Channel(cfg.Channels[0]);
+        Assert.Equal(new Rgb(0, 255, 0), ch.Target()); // default = from
+        ch.SetGradient(50);
+        Assert.Equal(new Rgb(128, 128, 128), ch.Target());
+    }
+
+    [Fact]
+    public void Stops_override_from_to()
+    {
+        var cfg = PluginConfig.Parse("""{ "channels": [ { "stops": [ { "at": 0, "color": "white" }, { "at": 100, "color": "off" } ] } ] }""");
+        var ch = new Channel(cfg.Channels[0]);
+        ch.SetGradient(100);
+        Assert.Equal(new Rgb(0, 0, 0), ch.Target());
+        Assert.Equal("MSI RGB", cfg.Channels[0].DisplayName);
     }
 
     [Fact]
@@ -112,6 +136,7 @@ public class ConfigTests
     [InlineData("""{ "channels": [ { "id": "a" }, { "id": "a" } ] }""")]
     [InlineData("""{ "channels": [ { "zones": "spd" } ] }""")]
     [InlineData("""{ "channels": [ { "mode": "rainbow" } ] }""")]
-    [InlineData("""{ "channels": [ { "stops": [ { "at": 0, "color": "red" } ] } ] }""")]
+    [InlineData("""{ "channels": [ { "stops": [ { "at": 0, "color": "redish" } ] } ] }""")]
+    [InlineData("""{ "channels": [ { "to": "nope" } ] }""")]
     public void Rejects_bad_config(string json) => Assert.ThrowsAny<FormatException>(() => PluginConfig.Parse(json));
 }

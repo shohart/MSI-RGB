@@ -31,6 +31,7 @@ public sealed class MsiRgbPlugin : IPlugin2
 
     public void Initialize()
     {
+        Close(); // FanControl may re-initialize plugins without closing them first
         try
         {
             var dir = Path.GetDirectoryName(typeof(MsiRgbPlugin).Assembly.Location) ?? ".";
@@ -58,7 +59,7 @@ public sealed class MsiRgbPlugin : IPlugin2
         {
             if (ch.Gradient != null)
             {
-                container.ControlSensors.Add(new RgbControl($"MsiRgb/{ch.Config.Id}", ch.Config.Name,
+                container.ControlSensors.Add(new RgbControl($"MsiRgb/{ch.Config.Id}", ch.Config.DisplayName,
                     v => { ch.SetGradient(v); _worker.Poke(); }));
             }
             else

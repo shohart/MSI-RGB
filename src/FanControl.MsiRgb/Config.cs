@@ -23,6 +23,8 @@ internal sealed class PluginConfig
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping, // keep "синий" readable
     };
 
     public static PluginConfig LoadOrCreate(string path)
@@ -55,22 +57,27 @@ internal sealed class ChannelConfig
     public string Name { get; set; } = "MSI RGB";
     /// <summary>all | jrgb | board</summary>
     public string Zones { get; set; } = "all";
-    /// <summary>gradient: one control 0..100 % mapped through Stops. rgb: three controls (R, G, B in %).</summary>
+    /// <summary>gradient: one control 0..100 % mapped From -> To (or through Stops). rgb: three controls (R, G, B in %).</summary>
     public string Mode { get; set; } = "gradient";
-    /// <summary>Colour shown before FanControl sets anything and after the control is released.</summary>
-    public string Default { get; set; } = "#0040FF";
-    public List<StopConfig> Stops { get; set; } = new()
-    {
-        new() { At = 0, Color = "#0040FF" },
-        new() { At = 40, Color = "#00FF40" },
-        new() { At = 70, Color = "#FFC000" },
-        new() { At = 100, Color = "#FF0000" },
-    };
+    /// <summary>Colour at 0 % (curve's lower temperature). Name ("синий") or #RRGGBB.</summary>
+    public string? From { get; set; } = "синий";
+    /// <summary>Colour at 100 % (curve's upper temperature).</summary>
+    public string? To { get; set; } = "красный";
+    /// <summary>Advanced: multi-colour scale; used instead of From/To when set.</summary>
+    public List<StopConfig>? Stops { get; set; }
+    /// <summary>Colour shown before FanControl sets anything and after the control is released (default: From).</summary>
+    public string? Default { get; set; }
 
     internal ZoneMask Mask => ZoneMask.Parse(Zones);
     internal bool IsRgb => Mode.Equals("rgb", StringComparison.OrdinalIgnoreCase);
-    internal Rgb DefaultColor => Rgb.Parse(Default);
-    internal Gradient Gradient => new(Stops.Select(s => (s.At, Rgb.Parse(s.Color))));
+    internal Rgb DefaultColor => Rgb.Parse(Default ?? From ?? "#000000");
+
+    internal Gradient Gradient => Stops is { Count: > 0 }
+        ? new(Stops.Select(s => (s.At, Rgb.Parse(s.Color))))
+        : new(new[] { (0f, Rgb.Parse(From ?? "#000000")), (100f, Rgb.Parse(To ?? "#000000")) });
+
+    /// <summary>What FanControl shows on the card, e.g. "MSI RGB: синий → красный".</summary>
+    internal string DisplayName => IsRgb || Stops is { Count: > 0 } ? Name : $"{Name}: {From} → {To}";
 
     internal void Validate()
     {
